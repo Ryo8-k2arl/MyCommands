@@ -1,0 +1,2 @@
+# exclude outdir (where object-files and so on are)
+out
