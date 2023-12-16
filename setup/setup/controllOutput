@@ -1,0 +1,71 @@
+#!/bin/env bash
+
+VERSION=1.1
+
+function showVersion() {
+    echo "$0 $VERSION"
+    unset VERSION
+}
+
+function usage_Common() {
+    cat <<EOM
+
+Common:
+  -v, --version                     display version information and exit
+  -h, --help                        display this help text and exit
+  -c, --clean                       delete unneeded packages and caches
+  -u, --update                      update package
+EOM
+}
+
+function usage_noArg() {
+    cat <<EOM
+
+Nothing args:
+  -a, --all
+  -b, --build-Language-env
+  -d, --delete-app
+  -g, --setting-git
+  -i, --install-app
+  -j, --Japanese-localization
+  -m, --min
+  -p, --install-package
+  -s, --mysetting
+EOM
+}
+
+function printHelper() {
+    cat << EOF
+
+Report bugs to: email
+General help using $(basename "$0"): <url>
+EOF
+}
+
+function usage() {
+    showVersion
+    echo "Usage: $(basename "$0") [ARG] [OPTION]..."
+    usage_Common
+    case "$1" in
+        help   ) usage_noArg; usage_APArg; usage_FTMArg; printHelper ;;
+        allArg ) usage_noArg; usage_APArg; usage_FTMArg ;;
+        noArg  ) usage_noArg  ;;
+    esac
+}
+
+# Error表示
+function warn() {
+    echo "Error: [$1]"
+    while [[ "$#" -gt 0 ]]; do
+        case "$1" in
+            0101          ) echo "    Can't use both short '-*' and long '--*' options at the same time." ; shift ;;
+            1101|2101|3101) echo "    Option '$2' doesn't exist."                                         ; shift ;;
+            1102|     3102) echo "    The ALL option (-a/--all) is only available as a standalone option."; shift ;;
+            1201          ) echo "    To install the app of'$2'  isn't supported."                        ; shift ;;
+            1202          ) echo "    Need option '-i/--install' to install the app."                     ; shift ;;
+            1203          ) echo "    Please specify the app to be installed."                            ; shift ;;
+            *) shift;;
+        esac
+    done
+    exit 1
+}

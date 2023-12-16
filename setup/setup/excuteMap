@@ -1,0 +1,170 @@
+#!/bin/env bash
+
+##########################################################################################################
+####################################### Build Develop Language Env #######################################
+##########################################################################################################
+
+function build_clang() {
+    sudo apt -y install build-essential
+}
+
+function build_python() {
+    sudo apt -y install build-essential libssl-dev zlib1g-dev \
+    libbz2-dev libreadline-dev libsqlite3-dev curl \
+    libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    d ~/.pyenv && src/configure && make -C src
+    SEARCHWORD='PYENV_ROOT'
+    if [[ ! "$(grep "$SEARCHWORD" ./config)" == "$SEARCHWORD" ]]; then
+        cat <<EOF >> "$HOME"/.bashrc
+
+########################### pyenv ###########################
+
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+#############################################################
+EOF
+    fi
+    source "$HOME"/.bashrc
+}
+
+function build_developenv() {
+    set -e
+    build_clang
+    build_python
+    set +e
+}
+##########################################################################################################
+
+
+
+##########################################################################################################
+############################################## System Setup ##############################################
+##########################################################################################################
+
+function update() {
+    set -e
+    sudo apt update
+    sudo apt upgrade -y
+    set +e
+}
+
+function clean() {
+    set -e
+    sudo apt -yV autoremove
+    sudo apt autoclean
+    set +e
+}
+
+function install_package() {
+    set -e
+    sudo apt install -y git curl iproute2 plocate vim-gtk
+    clean
+    set +e
+}
+
+function japanalize() {
+    set -e
+    sudo apt install -y language-pack-ja-base language-pack-ja
+    sudo update-locale LANG=ja_JP.utf8
+    sudo apt install -y manpages-ja manpages-ja-dev
+    sudo timedatectl set-timezone Asia/Tokyo
+    LANG=C xdg-user-dirs-update --force
+    cd "$HOME" || return
+    set +e
+    mv デスクトップ/* Desktop; mv ダウンロード/* Downloads; mv テンプレート/* Templates; mv 公開/* Public; mv ドキュメント/* Documents; mv ミュージック/* Music; mv ピクチャ/* Pictures; mv ビデオ/* Videos
+    rm -rf デスクトップ ダウンロード テンプレート 公開 ドキュメント ミュージック ピクチャ ビデオ
+}
+##########################################################################################################
+
+
+
+##########################################################################################################
+############################################## Application ###############################################
+##########################################################################################################
+
+function deleateApplication() {
+    set -e
+    sudo apt -y purge libreoffice*
+    sudo apt -y purge thunderbird*
+    sudo apt -y purge firefox
+    sudo snap remove firefox
+    clean
+    set +e
+}
+
+function install_chrome() {
+    cd /tmp || return
+    wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    sudo dpkg -i google-chrome-stable_current_amd64.deb
+    sudo apt install -f
+    cd "$HOME" || return
+}
+
+function install_vscode() {
+    cd /tmp || return
+    wget -O vscode.deb 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64'
+    sudo apt install -y ./vscode.deb
+    cd "$HOME" || return
+}
+
+function installApplication() {
+    if [[ "$#" == 0  ]]; then
+        warn 1203
+    else
+        while [[ "$#" -gt 0 ]]; do
+            case "$1" in
+                vscode|VScode|VSCode) install_vscode ; shift ;;
+                chrome|Chrome       ) install_chrome ; shift ;;
+                *) warn 1201 "$1";
+            esac
+        done
+    fi
+}
+##########################################################################################################
+
+
+
+##########################################################################################################
+############################################## Other Setup ###############################################
+##########################################################################################################
+
+function setup_git() {
+
+    set -e
+    CDPATH=$(pwd)
+    git config --global user.name "\"$GITUSER\""
+    git config --global user.email "\"$GITMAIL\""
+    cd "$HOME" || return
+    DIRNAME="$HOME"/.ssh
+    if [[ ! -d "$DIRNAME" ]]; then mkdir "$DIRNAME"; fi
+    cd "$DIRNAME" || return
+    if [[ ! -f config ]]; then touch config; fi
+    SEARCHWORD='#GitHub SSH key'
+    if [[ ! "$(grep "$SEARCHWORD" ./config)" == "$SEARCHWORD" ]]; then
+        cat <<EOF >> ./config
+#GitHub SSH key
+Host github.com
+        HostName github.com
+        IdentityFile ~/.ssh/id_rsa_github
+        User git
+EOF
+    fi; unset SEARCHWORD DIRNAME
+    cd "$CDPATH" || return
+    set +e
+}
+
+function noteCommandResult () {
+    echo "To note command is developing now."
+}
+
+function SelfSetup() {      #nothing `-s`
+    noteCommandResult
+}
+##########################################################################################################
+
+##########################################################################################################
+####################################################  ####################################################
+##########################################################################################################
